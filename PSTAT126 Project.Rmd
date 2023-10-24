@@ -1,0 +1,513 @@
+---
+title: "PSTAT126 Project"
+author: "Liuqian Bao, Andrew Cheng"
+date: "2023-10-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("skimr")
+library("dplyr")
+options(max.print=1000000)
+library(readxl)
+library(ggplot2)
+train <- read_excel("C:/Users/baoli/Desktop/PSTAT126/house-prices-advanced-regression-techniques/train.xlsx") 
+```
+
+
+```{r include=FALSE}
+# Variable Selection
+train1 <- subset(train, select = -c(MSSubClass, OverallCond, BsmtFinSF2, LowQualFinSF, BsmtHalfBath, YrSold, MoSold, MiscVal, PoolArea, ScreenPorch, EnclosedPorch, KitchenAbvGr, BedroomAbvGr, Street, Alley, Utilities, LandSlope, RoofMatl, BsmtExposure, Heating, CentralAir, MiscFeature, Fence, PoolQC, LandContour,BldgType, Exterior2nd, GarageQual, GarageCond, PavedDrive, SaleType, SaleCondition, GrLivArea, OverallQual, TotalBsmtSF, WoodDeckSF, GarageArea, Fireplaces, TotRmsAbvGrd, MSZoning, Functional, MasVnrArea, GarageYrBlt, YearBuilt, YearRemodAdd))
+
+drop <- c("Condition1","Condition2", "3SsnPorch", "LotFrontage", "1stFlrSF", "2ndFlrSF")
+train2 <- train1[,!(names(train1) %in% drop)]
+train2
+```
+
+### Data Descrption 
+
+#### Source
+
+  Anna Montoya, DataCanary. (2016). House Prices - Advanced Regression Techniques. Kaggle.Obtained from https://kaggle.com/competitions/house-prices-advanced-regression-techniques
+
+#### Observational unit:
+
+Each property sampled in the data set.
+
+#### Population:
+
+All residential homes in Ames, Iowa.
+
+#### Variable descriptions: 
+  
+  Id: The id number of the observation, from 1 to 1460.
+  
+  Response variable: 
+  
+  SalePrice:  The property's sale price in dollars. The dependent variable.
+  
+  Predictors:
+  
+  1. LotArea: Lot size in square feet
+
+  2. LotShape: General shape of property
+  
+```{r include=FALSE}
+## Reg	Regular	
+## IR1	Slightly irregular
+## IR2	Moderately Irregular
+## IR3	Irregular
+```
+
+  
+  3. LotConfig: Lot configuration
+  
+```{r include=FALSE}
+## Inside	  Inside lot
+## Corner	  Corner lot
+## CulDSac	Cul-de-sac
+## FR2	   Frontage on 2 sides of property
+## FR3	   Frontage on 3 sides of property
+```
+
+  
+  4. Neighborhood: Physical locations within Ames city limits
+  
+```{r include=FALSE}
+## Blmngtn	Bloomington Heights
+## Blueste	Bluestem
+## BrDale	Briardale
+## BrkSide	Brookside
+## ClearCr	Clear Creek
+## CollgCr	College Creek
+## Crawfor	Crawford
+## Edwards	Edwards
+## Gilbert	Gilbert
+## IDOTRR	Iowa DOT and Rail Road
+## MeadowV	Meadow Village
+## Mitchel	Mitchell
+## Names	North Ames
+## NoRidge	Northridge
+## NPkVill	Northpark Villa
+## NridgHt	Northridge Heights
+## NWAmes	Northwest Ames
+## OldTown	Old Town
+## SWISU	South & West of Iowa State University
+## Sawyer	Sawyer
+## SawyerW	Sawyer West
+## Somerst	Somerset
+## StoneBr	Stone Brook
+## Timber	Timberland
+## Veenker	Veenker
+```
+
+  
+  5. HouseStyle: Style of dwelling
+  
+```{r include=FALSE}
+# 1Story	One story
+# 1.5Fin	One and one-half story: 2nd level finished
+# 1.5Unf	One and one-half story: 2nd level unfinished
+# 2Story	Two story
+# 2.5Fin	Two and one-half story: 2nd level finished
+# 2.5Unf	Two and one-half story: 2nd level unfinished
+# SFoyer	Split Foyer
+# SLvl	Split Level
+```
+
+  
+  8. RoofStyle: Type of roof
+  
+```{r include=FALSE}
+# Flat	Flat
+# Gable	Gable
+# Gambrel	Gabrel (Barn)
+# Hip	Hip
+# Mansard	Mansard
+# Shed	Shed
+```
+
+  
+  9. Exterior1st: Exterior covering on house
+  
+```{r include=FALSE}
+# AsbShng	Asbestos Shingles
+# AsphShn	Asphalt Shingles
+# BrkComm	Brick Common
+# BrkFace	Brick Face
+# CBlock	Cinder Block
+# CemntBd	Cement Board
+# HdBoard	Hard Board
+# ImStucc	Imitation Stucco
+# MetalSd	Metal Siding
+# Other	Other
+# Plywood	Plywood
+# PreCast	PreCast	
+# Stone	Stone
+# Stucco	Stucco
+# VinylSd	Vinyl Siding
+# Wd Sdng	Wood Siding
+# WdShing	Wood Shingles
+```
+
+  
+  10. MasVnrType: Masonry veneer type
+  
+```{r include=FALSE}
+# BrkCmn	Brick Common
+# BrkFace	Brick Face
+# CBlock	Cinder Block
+# None	  None
+# Stone	  Stone
+```
+
+
+  11. ExterQual:Evaluates the quality of the material on the exterior 
+  
+```{r include=FALSE}
+# Ex	Excellent
+# Gd	Good
+# TA	Average/Typical
+# Fa	Fair
+# Po	Poor
+```
+
+
+  12. ExterCond: Evaluates the present condition of the material on the exterior
+  
+```{r include=FALSE}
+# Ex	Excellent
+# Gd	Good
+# TA	Average/Typical
+# Fa	Fair
+# Po	Poor
+```
+
+
+  13. Foundation: Type of foundation
+  
+```{r include=FALSE}
+# BrkTil	Brick & Tile
+# CBlock	Cinder Block
+# PConc	Poured Contrete	
+# Slab	Slab
+# Stone	Stone
+# Wood	Wood
+```
+
+
+  14. BsmtQual: Evaluates the height of the basement
+  
+```{r include=FALSE}
+# Ex	Excellent (100+ inches)	
+# Gd	Good (90-99 inches)
+# TA	Typical (80-89 inches)
+# Fa	Fair (70-79 inches)
+# Po	Poor (<70 inches)
+# NA	No Basement
+```
+
+
+  15. BsmtCond: Evaluates the general condition of the basement
+  
+```{r include=FALSE}
+# Ex	Excellent
+# Gd	Good
+# TA	Typical - slight dampness allowed
+# Fa	Fair - dampness or some cracking or settling
+# Po	Poor - Severe cracking, settling, or wetness
+# NA	No Basement
+```
+
+
+  16. BsmtFinType1: Rating of basement finished area
+  
+```{r include=FALSE}
+# GLQ	Good Living Quarters
+# ALQ	Average Living Quarters
+# BLQ	Below Average Living Quarters	
+# Rec	Average Rec Room
+# LwQ	Low Quality
+# Unf	Unfinshed
+# NA	No Basement
+```
+
+
+  17. BsmtFinSF1: basement finished area square feet
+  
+  18. BsmtFinType2: Rating of basement finished area (if multiple types)
+  
+```{r include=FALSE}
+# GLQ	Good Living Quarters
+# ALQ	Average Living Quarters
+# BLQ	Below Average Living Quarters	
+# Rec	Average Rec Room
+# LwQ	Low Quality
+# Unf	Unfinshed
+# NA	No Basement
+```
+
+
+  19. BsmtUnfSF: Unfinished square feet of basement area
+  
+  20. HeatingQC: Heating quality and condition
+  
+```{r include=FALSE}
+# Ex	Excellent
+# Gd	Good
+# TA	Average/Typical
+# Fa	Fair
+# Po	Poor
+```
+
+
+  21. Electrical system
+  
+```{r include=FALSE}
+# SBrkr	Standard Circuit Breakers & Romex
+# FuseA	Fuse Box over 60 AMP and all Romex wiring (Average)	
+# FuseF	60 AMP Fuse Box and mostly Romex wiring (Fair)
+# FuseP	60 AMP Fuse Box and mostly knob & tube wiring (poor)
+# Mix	Mixed
+```
+
+
+  22. BsmtFullBath: Basement full bathrooms
+  
+  23. FullBath: Full bathrooms above grade
+  
+  24. HalfBath: Half baths above grade
+  
+  25. KitchenQualKitchenQual: Kitchen quality
+  
+```{r include=FALSE}
+# Ex	Excellent
+# Gd	Good
+# TA	Typical/Average
+# Fa	Fair
+# Po	Poor
+```
+
+
+  26. FireplaceQu: Fireplace quality
+  
+```{r include=FALSE}
+# Ex	Excellent - Exceptional Masonry Fireplace
+# Gd	Good - Masonry Fireplace in main level
+# TA	Average - Prefabricated Fireplace in main living area or Masonry Fireplace in basement
+# Fa	Fair - Prefabricated Fireplace in basement
+# Po	Poor - Ben Franklin Stove
+# NA	No Fireplace
+```
+
+
+  27. GarageType: Garage location
+  
+```{r include=FALSE}
+# 2Types	More than one type of garage
+# Attchd	Attached to home
+# Basment	Basement Garage
+# BuiltIn	Built-In (Garage part of house - typically has room above garage)
+# CarPort	Car Port
+# Detchd	Detached from home
+# NA	No Garage
+```
+
+  28. GarageFinish: Interior finish of the garage
+  
+```{r include=FALSE}
+# Fin	Finished
+# RFn	Rough Finished	
+# Unf	Unfinished
+# NA	No Garage
+```
+
+
+  29. GarageCars: Size of garage in car capacity
+  
+  30. OpenPorchSF: Open porch area in square feet
+
+### Data Summary 
+
+#### Summary Statistics 
+
+We selected, in total, 28 predictors, 8 of which are numerical variables and 20 of which are categorical variables. Here is a summary table for all variables, including the response variable SalePrice and Id of the observational units:
+
+```{r echo=FALSE}
+skim(train2)
+```
+
+#### Distribution of individual variables 
+
+```{r echo=FALSE}
+train2_numerical <- select_if(train2, is.numeric)
+
+par(mfrow = c(2, 2))
+
+for (i in colnames(train2_numerical)[-1]){
+   hist(train2_numerical[[i]], 
+        breaks = 80, 
+        col = '#008080',
+        xlab = i, 
+        ylab = "Number of Observations",
+        main = paste("Histogram of ", i))
+}
+```
+
+1. The LotArea has a mean of 10,516.83, with the highest bar (frequency over 400) occurring in the 1000-1300 range. While the shape approximates a bell curve, it does not form a true bell-shaped distribution due to outliers exceeding 500,000 in lot area.
+
+2. The histogram for BsmtFinSF1 has a mean that is not easy to tell from first glance. The actual mean is 443.64. The shape of the distribution is right-skewed with high frequency around zero. 
+
+3. The histogram for BsmtFinSF has a mean that is not easy to tell from first glance compared to the actual mean of 567.24. The shape is of a strange type where when BsmtFinSF is 0 the frequency is the highest reaching over 120 but afterwards it has a distribution that is even as BsmtFinSF increases, slowly decreasing in frequency along the way.
+
+4. The histogram for BsmtFullBath has a mean that is not easy to tell from first glance compared to the actual mean of 0.43. The shape is of a strange type where when BsmtFullBathF is 0.0 the frequency is the highest reaching well over 800 but afterwards it has no frequency at all until BsmtFullBathF reaches 1.0 where frequency hits around 600.
+
+5. The histogram for FullBath has a mean that is not easy to tell from first glance compared to the actual mean of 1.57. The shape is of a strange type where compared with BsmtFullBathF at 0.0 the frequency is very low sitting around 0 and afterwards it has no frequency at all. However, at 1.0 and 2.0, the frequency increases so dramatically at that 2.0, the frequency hits over 600. Afterwards, again, there is no frequency at all.  
+
+6. The histogram for HalfBath has a mean that is not easy to tell from first glance compared to the actual mean of 0.38. The shape is similar to that of the histogram for FullBath, however, the most striking difference is that when HalfBath is 0.0, it has the highest frequency as it tops well over 800. When HalfBath is at 1.0, the frequency is around 600, with the frequency being 0 the rest of the times.   
+
+7. The histogram for GarageCars has a mean that is not easy to tell from first glance compared its actual mean of 1.77. The shape is similar to that of the histogram for FullBath, but it is more sophisticated. There is data for every number of garage car, starting from 0 all the way to 4. At 2, the frequency is by far the highest, topping over 800, with 1 and 3 having the next highest frequencies in the plot. 
+
+8. The histogram for OpenPorchSF has a mean that is not easy to tell from first glance compared its actual mean of 46.66. The shape is similar to that of the histogram for BsmtFinSF1, but OpenPorchSF has an even greater difference between the frequency of when OpenPorchSF is 0 and when OpenPorchSF is at different values. At 0, the frequency sits well above 500, while none of the rest of the freqencies hit 100.
+
+9. The histogram for SalePrice has a mean that is around 50, which is pretty close to the true mean that is around 46.66. The shape of the histogram is close to and has parts that resembles that of a bell curve distribution. The highest frequency occurs when the SalePrice is near 2e+05, with a frequency topping 120. However, we cannot say that it is a bell curve distribution since there are outliers.
+
+### Correlation between the numerical variables and the response 
+
+#### correlation matrix 
+
+The correlation matrix of all numerical variables:
+```{r echo=FALSE}
+cor(select_if(train2, is.numeric))
+```
+
+#### Scatter plots of SalePrice against the numerical variables:
+
+1. The scatterplot for Lot Area versus SalePrice reveals a connection between the size of the lot and the selling price. Generally, when the lot size increases, the sale price also tends to go up. However, this relationship isn't very strong because most data points are clustered near the lower end of the lot sizes, as shown below: 
+
+```{r echo=FALSE}
+ggplot(data = train2 , mapping = aes(x = LotArea, y = SalePrice)) + 
+  geom_point(alpha = 0.1) +
+  labs(title="SalePrice vs. LotArea") +
+  xlab("LotArea") + ylab("SalePrice")
+```
+
+2. The scatterplot of SalePrice versus BsmtFinSF1 indicates a strong association between BsmtFinSF1 and SalePrice. When BsmtFinSF1 increases, there is a clear corresponding increase in SalePrice, as indicated by the tightly packed data points. Similarly to the previous plot, there is also a clustering of data points at the 0 value for BsmtFinSF1, suggesting many properties without finished basement space.
+
+```{r echo=FALSE}
+ggplot(data = train2 , mapping = aes(x = BsmtFinSF1, y = SalePrice)) + 
+  geom_point(alpha = 0.1) +
+  labs(title="SalePrice vs. BsmtFinSF1") +
+  xlab("BsmtFinSF1") + ylab("SalePrice")
+```
+
+3. The GarageCars and FullBath variables show similar and strong associations with the SalePrice. Generally, the greater the number of garage cars and full baths, the higher the sale price of the property, as shown below:
+
+```{r echo=FALSE}
+ggplot(data = train2 , mapping = aes(x = GarageCars, y = SalePrice)) + 
+  geom_point(alpha = 0.1) +
+  labs(title="SalePrice vs. GarageCars") +
+  xlab("GarageCars") + ylab("SalePrice")
+
+ggplot(data = train2 , mapping = aes(x = FullBath, y = SalePrice)) + 
+  geom_point() +
+  labs(title="SalePrice vs. FullBath") +
+  xlab("FullBath") + ylab("SalePrice")
+```
+
+
+### Correlation between the categorical variables and the response 
+
+#### Side by side boxplot for SalePrice against the categorical variables:
+```{r include=FALSE}
+train_2_categorical <- select_if(train2, is.character)
+
+for (i in colnames(train_2_categorical)){
+   boxplot(train2$SalePrice ~ train2[[i]], 
+           col = "#556B2F",
+           xlab = toString(i), 
+           ylab = 'SalePrice')
+}
+```
+
+1. The Neighborhood variable has a strong correlation with the SalePrice, because we can see from the side-by-side box plot that the mean of the distribution of SalePrice for different neighborhoods are very different. Also, different neighborhoods have very different variance in SalPrice. As shown below: 
+
+```{r echo=FALSE}
+boxplot(train2$SalePrice ~ train2[["Neighborhood"]], 
+        col = "#008080",
+        xlab = "Neighborhood", 
+        ylab = "SalePrice",
+        main = "Side-by-side Boxplot of SalePrice vs. Neighborhood")
+```
+
+2. The HouseStyle variable has a moderate correlation with the SalePrice, and different house styles also show great differences in variance of the SalePrice distribution. The 1 story, 2.5Fin, and 2 story styles, in particular, have much greater variance than other styles. As shown below:
+
+```{r echo=FALSE}
+boxplot(train2$SalePrice ~ train2[["HouseStyle"]], 
+        col = "#008080",
+        xlab = "Neighborhood", 
+        ylab = "SalePrice",
+        main = "Side-by-side Boxplot of SalePrice vs. HouseStyle")
+```
+
+3. The ExterQual, BsmtQual, BsmtCond, KitchenQual, and FireplaceQu, which are the condition and qualities of the exterior, basement, kitchen and fireplace of the properties, all have similar relationships with the SalePrice. In general, the better the condition/quiality, the higher the SalePrice. As shown below:
+
+```{r echo=FALSE}
+par(mfrow = c(2, 2))
+for (i in c("ExterQual", "BsmtQual", "BsmtCond", "KitchenQual", "FireplaceQu")){
+   boxplot(train2$SalePrice ~ train2[[i]], 
+           col = "#008080",
+           xlab = toString(i), 
+           ylab = 'SalePrice')
+}
+```
+
+4. GarageType, GarageFinish variables also show some association with the SalePrice. In particular, built-in and attached garage types have higher sale prices then other categories. Properties with finished and rough finished	garages have higher price, on average, than those with unfinished or no garage, as shown below:
+
+```{r echo=FALSE}
+for (i in c("GarageType", "GarageFinish")){
+   boxplot(train2$SalePrice ~ train2[[i]], 
+           col='#008080',
+           xlab = toString(i), 
+           ylab='SalePrice')
+}
+```
+
+
+### Interesting features 
+
+1. The ExterCond variable, which is the the present condition of the material on the exterior, surprisingly, has very little correlation with the SalePrice based on the side-by-side box plot. 
+
+2. There is a very weak correlation between unfinished basement and sale proce. In general, it doesn't seem like having a larger unfinished basement (BsmtUnfSF) results in a notably higher sale price. Interestingly, many data points bunch up around the 0 value for BsmtUnfSF, suggesting a common occurrence of properties without much unfinished space.
+
+3. Also, there is a very weak relationship between OpenPorchSF and SalePrice, which is surprising because we would imagine that properties with greater open porch area will have higher sale price. 
+
+4. The distribution of SalePrice for properties in Ames, Iowa shows a very right-skewed shape, which implies that a significant number of houses have lower sale prices, and there are relatively fewer houses with very high sale prices. This may reflect income disparities or variations in property values within the area, with a concentration of less expensive homes and only a few high-end properties. 
+
+Graphics of the interesting features:
+
+```{r echo=FALSE}
+
+boxplot(train2$SalePrice ~ train2[["ExterCond"]], 
+        col = "lightgrey",
+        xlab = "ExterCond", 
+        ylab = "SalePrice",
+        main = "Side-by-side Boxplot of SalePrice vs. ExterCond")
+ggplot(data = train2 , mapping = aes(x = BsmtUnfSF, y = SalePrice)) + 
+  geom_point(alpha = 0.1) +
+  labs(title="SalePrice vs. BsmtUnfSF") +
+  xlab("BsmtUnfSF") + ylab("SalePrice")
+ggplot(data = train2 , mapping = aes(x = OpenPorchSF, y = SalePrice)) + 
+  geom_point(alpha = 0.1) +
+  labs(title="SalePrice vs. OpenPorchSF") +
+  xlab("OpenPorchSF") + ylab("SalePrice")
+hist(train2_numerical[["SalePrice"]], 
+     breaks = 80, 
+     col = 'lightgrey',
+     xlab = "SalePrice", 
+     ylab = "Number of Observations",
+     main = paste("Histogram of SalePrice"))
+
+```
+
