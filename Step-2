@@ -11,3 +11,5 @@ library(readxl)
 library(ggplot2)
 train <- read_excel("C:/Users/baoli/Desktop/PSTAT126/house-prices-advanced-regression-techniques/train.xlsx") 
 ```
+
+Hello
