@@ -1,1 +1,13 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("skimr")
+library("dplyr")
+options(max.print=1000000)
+library(readxl)
+library(ggplot2)
+train <- read_excel("C:/Users/baoli/Desktop/PSTAT126/house-prices-advanced-regression-techniques/train.xlsx") 
+```
